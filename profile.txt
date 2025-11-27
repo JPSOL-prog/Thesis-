@@ -1,0 +1,75 @@
+<?php
+include "config.php";
+session_start();
+
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: index.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+
+$user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id=$user_id"));
+
+
+if (isset($_POST['update_profile'])) {
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    
+ 
+    if (!empty($_FILES['profile_pic']['name'])) {
+        $uploadDir = "uploads/";
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        $fileName = time() . "_" . $_FILES['profile_pic']['name'];
+        move_uploaded_file($_FILES['profile_pic']['tmp_name'], $uploadDir . $fileName);
+        
+      
+        mysqli_query($conn, "UPDATE users SET username='$username', email='$email', profile_pic='$fileName' WHERE id=$user_id");
+        $_SESSION['profile_pic'] = $fileName;
+    } else {
+        
+        mysqli_query($conn, "UPDATE users SET username='$username', email='$email' WHERE id=$user_id");
+    }
+
+    $_SESSION['username'] = $username;
+    header("Location: profile.php");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AlumiNest >< Profile</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="profile">
+        <img src="<?php echo $_SESSION['profile_pic'] ?? 'profile-pic.jpg'; ?>" alt="Profile Pic">
+        <h3><?php echo $_SESSION['username']; ?></h3>
+    </div>
+    <ul class="menu">
+        <li><a href="dashboard.php">Dashboard</a></li>
+        <li><a href="profile.php">Profile / Account</a></li>
+        <li><a href="logout.php">Logout</a></li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <h2>Edit Profile ><</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="text" name="username" value="<?php echo $user['username']; ?>" required>
+        <input type="email" name="email" value="<?php echo $user['email']; ?>" required>
+        <label>Profile Picture</label>
+        <input type="file" name="profile_pic" accept="image/*">
+        <button name="update_profile">Update ></button>
+    </form>
+</div>
+
+</body>
+</html>
