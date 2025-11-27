@@ -11,29 +11,31 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 
-$user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE id=$user_id"));
-
+$user_query = mysqli_query($conn, "SELECT * FROM users WHERE id=$user_id");
+$user = mysqli_fetch_assoc($user_query);
 
 if (isset($_POST['update_profile'])) {
     $username = $_POST['username'];
     $email = $_POST['email'];
+    $profile_pic = $user['profile_pic']; 
+
     
- 
     if (!empty($_FILES['profile_pic']['name'])) {
         $uploadDir = "uploads/";
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
         $fileName = time() . "_" . $_FILES['profile_pic']['name'];
         move_uploaded_file($_FILES['profile_pic']['tmp_name'], $uploadDir . $fileName);
-        
-      
-        mysqli_query($conn, "UPDATE users SET username='$username', email='$email', profile_pic='$fileName' WHERE id=$user_id");
-        $_SESSION['profile_pic'] = $fileName;
-    } else {
-        
-        mysqli_query($conn, "UPDATE users SET username='$username', email='$email' WHERE id=$user_id");
+        $profile_pic = $fileName;
     }
 
+
+    mysqli_query($conn, "UPDATE users SET username='$username', email='$email', profile_pic='$profile_pic' WHERE id=$user_id");
+
+   
     $_SESSION['username'] = $username;
+    $_SESSION['profile_pic'] = $profile_pic;
+
     header("Location: profile.php");
     exit();
 }
@@ -43,14 +45,14 @@ if (isset($_POST['update_profile'])) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>AlumiNest >< Profile</title>
+<title>AlumiNest > Profile</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="sidebar">
     <div class="profile">
-        <img src="<?php echo $_SESSION['profile_pic'] ?? 'profile-pic.jpg'; ?>" alt="Profile Pic">
+        <img src="uploads/<?php echo $_SESSION['profile_pic'] ?? 'profile-pic.jpg'; ?>" alt="Profile Pic">
         <h3><?php echo $_SESSION['username']; ?></h3>
     </div>
     <ul class="menu">
@@ -61,13 +63,13 @@ if (isset($_POST['update_profile'])) {
 </div>
 
 <div class="main-content">
-    <h2>Edit Profile ><</h2>
+    <h2>Edit Profile ></h2>
     <form method="POST" enctype="multipart/form-data">
         <input type="text" name="username" value="<?php echo $user['username']; ?>" required>
         <input type="email" name="email" value="<?php echo $user['email']; ?>" required>
         <label>Profile Picture</label>
         <input type="file" name="profile_pic" accept="image/*">
-        <button name="update_profile">Update ></button>
+        <button type="submit" name="update_profile">Update ></button>
     </form>
 </div>
 
