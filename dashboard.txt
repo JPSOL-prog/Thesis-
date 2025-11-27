@@ -13,37 +13,64 @@ $user_id = $_SESSION['user_id'];
 
 if (isset($_POST['create_post'])) {
     $content = trim($_POST['post_content']);
-    if (!empty($content)) {
-        mysqli_query($conn, "INSERT INTO posts (user_id, content) VALUES ($user_id, '" . mysqli_real_escape_string($conn, $content) . "')");
+    $imageName = "";
+
+    if (!empty($_FILES['post_image']['name'])) {
+        $targetDir = "uploads/posts/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+        $imageName = time() . "_" . $_FILES['post_image']['name'];
+        move_uploaded_file($_FILES['post_image']['tmp_name'], $targetDir . $imageName);
+    }
+
+    if ($content != "" || $imageName != "") {
+        $sql = "INSERT INTO posts (user_id, content, image, like_count) VALUES ($user_id, '$content', '$imageName', 0)";
+        $conn->query($sql);
+    }
+}
+
+if (isset($_POST['like_post'])) {
+    $post_id = $_POST['post_id'];
+    $conn->query("UPDATE posts SET like_count = like_count + 1 WHERE id = $post_id");
+}
+
+
+if (isset($_POST['comment_post'])) {
+    $post_id = $_POST['post_id'];
+    $comment = trim($_POST['comment']);
+    $username = $_SESSION['username'];
+
+    if ($comment != "") {
+        $conn->query("INSERT INTO comments (post_id, user_name, comment) VALUES ($post_id, '$username', '$comment')");
     }
 }
 
 
-$posts = mysqli_query($conn, "
-    SELECT posts.*, users.username, users.profile_pic
+$posts = $conn->query("
+    SELECT posts.*, users.username, users.profile_pic 
     FROM posts 
-    JOIN users ON posts.user_id = users.id
-    ORDER BY created_at DESC
+    JOIN users ON posts.user_id = users.id 
+    ORDER BY posts.created_at DESC
 ");
 
 
-$users = mysqli_query($conn, "SELECT * FROM users LIMIT 10");
+$users = $conn->query("SELECT * FROM users LIMIT 10");
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlumiNest >< Dashboard</title>
+<title>AlumiNest > Dashboard</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-
 <div class="sidebar">
     <div class="profile">
-        <img src="uploads/<?php echo $_SESSION['profile_pic'] ?? 'profile-pic.jpg'; ?>" alt="Profile Pic">
+        <img src="uploads/<?php echo $_SESSION['profile_pic'] ?: 'profile-pic.jpg'; ?>">
         <h3><?php echo $_SESSION['username']; ?></h3>
     </div>
     <ul class="menu">
@@ -56,37 +83,55 @@ $users = mysqli_query($conn, "SELECT * FROM users LIMIT 10");
 <div class="main-content">
     <h2>Welcome home, <?php echo $_SESSION['username']; ?> ><</h2>
 
-    
     <div class="stories-bar">
-        <?php while ($user = mysqli_fetch_assoc($users)): ?>
+        <?php while ($user = $users->fetch_assoc()): ?>
             <div class="story">
-                <img src="uploads/<?php echo $user['profile_pic'] ?? 'profile-pic.jpg'; ?>" alt="<?php echo $user['username']; ?>">
+                <img src="uploads/<?php echo $user['profile_pic'] ?: 'profile-pic.jpg'; ?>">
                 <span><?php echo $user['username']; ?></span>
             </div>
         <?php endwhile; ?>
     </div>
 
-  
     <div class="new-post">
-        <form method="POST">
-            <textarea name="post_content" placeholder="What's on your mind?" required></textarea>
+        <form method="POST" enctype="multipart/form-data">
+            <textarea name="post_content" placeholder="What's on your mind?"></textarea>
+            <input type="file" name="post_image" accept="image/*">
             <button type="submit" name="create_post">Post</button>
         </form>
     </div>
 
-    
     <div class="posts">
-        <?php while ($post = mysqli_fetch_assoc($posts)): ?>
+        <?php while ($post = $posts->fetch_assoc()): ?>
             <div class="post-card">
                 <div class="post-header">
-                    <img src="uploads/<?php echo $post['profile_pic'] ?? 'profile-pic.jpg'; ?>" alt="<?php echo $post['username']; ?>">
+                    <img src="uploads/<?php echo $post['profile_pic'] ?: 'profile-pic.jpg'; ?>">
                     <h4><?php echo $post['username']; ?></h4>
                 </div>
+
                 <p><?php echo htmlspecialchars($post['content']); ?></p>
-                <div class="post-actions">
-                    <button>❤️ Like</button>
-                    <button>💬 Comment</button>
-                </div>
+
+                <?php if ($post['image'] != ""): ?>
+                    <img src="uploads/posts/<?php echo $post['image']; ?>" class="post-image">
+                <?php endif; ?>
+
+                <form method="POST">
+                    <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
+                    <button name="like_post">❤️ Like (<?php echo $post['like_count']; ?>)</button>
+                </form>
+
+                <form method="POST" class="comment-box">
+                    <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
+                    <input type="text" name="comment" placeholder="Write a comment..." required>
+                    <button name="comment_post">💬</button>
+                </form>
+
+                <?php
+                $comments = $conn->query("SELECT * FROM comments WHERE post_id=".$post['id']." ORDER BY created DESC");
+                while ($c = $comments->fetch_assoc()):
+                ?>
+                    <p class="comment"><strong><?php echo $c['user_name']; ?>:</strong> <?php echo htmlspecialchars($c['comment']); ?></p>
+                <?php endwhile; ?>
+
                 <span class="post-time"><?php echo $post['created_at']; ?></span>
             </div>
         <?php endwhile; ?>
