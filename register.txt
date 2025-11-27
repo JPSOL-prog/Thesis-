@@ -4,7 +4,6 @@ session_start();
 
 $error = ""; 
 
-
 if (isset($_POST['register'])) {
     $fullname = $_POST['fullname'];
     $username = $_POST['username'];
@@ -12,15 +11,16 @@ if (isset($_POST['register'])) {
     $birthday = $_POST['birthday'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
 
+    
     if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['name'] != "") {
-        $target_dir = "uploads/";
-        if (!is_dir($target_dir)) mkdir($target_dir, 0777, true);
+        $uploadDir = "uploads/";
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
-        $file_name = time() . "_" . basename($_FILES["profile_pic"]["name"]);
-        $target_file = $target_dir . $file_name;
+        $fileName = time() . "_" . basename($_FILES["profile_pic"]["name"]);
+        $targetFile = $uploadDir . $fileName;
 
-        if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $target_file)) {
-            $profile_pic = $file_name;
+        if (move_uploaded_file($_FILES["profile_pic"]["tmp_name"], $targetFile)) {
+            $profile_pic = $fileName;
         } else {
             $profile_pic = 'profile-pic.jpg';
         }
@@ -33,16 +33,15 @@ if (isset($_POST['register'])) {
     if ($check->num_rows > 0) {
         $error = "Username or email already exists!";
     } else {
-       
+     
         $sql = "INSERT INTO users (fullname, username, email, birthday, password, profile_pic)
                 VALUES ('$fullname', '$username', '$email', '$birthday', '$password', '$profile_pic')";
+
         if ($conn->query($sql)) {
-            
             $_SESSION['user_id'] = $conn->insert_id;
             $_SESSION['username'] = $username;
             $_SESSION['profile_pic'] = $profile_pic;
 
-           
             header("Location: dashboard.php");
             exit();
         } else {
@@ -62,16 +61,15 @@ if (isset($_POST['register'])) {
 </head>
 <body>
 
-
 <div class="center-page">
     <div class="aesthetic-container">
         <h2>AlumiNest >< Create Account</h2>
 
-        <?php if ($error): ?>
-            <div class="error-box"><?= $error ?></div>
+       
+        <?php if ($error != ""): ?>
+            <div class="error-box"><?php echo $error; ?></div>
         <?php endif; ?>
 
-        
         <form method="POST" enctype="multipart/form-data">
             <input type="text" name="fullname" placeholder="Full Name" required>
             <input type="text" name="username" placeholder="Username" required>
@@ -81,7 +79,6 @@ if (isset($_POST['register'])) {
             <input type="password" name="password" placeholder="Password" required>
             <label>Profile Picture</label>
             <input type="file" name="profile_pic" accept="image/*">
-
             <button name="register">Register</button>
         </form>
 
