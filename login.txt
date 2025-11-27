@@ -10,26 +10,23 @@ if (isset($_SESSION['user_id'])) {
 
 $error = ""; 
 
-
 if (isset($_POST['login'])) {
     $email = $_POST['email'];
     $pass  = $_POST['password'];
 
- 
+   
     $sql = "SELECT * FROM users WHERE email='$email'";
     $result = mysqli_query($conn, $sql);
 
     if ($result && mysqli_num_rows($result) === 1) {
         $row = mysqli_fetch_assoc($result);
 
-   
+        
         if (password_verify($pass, $row['password'])) {
-            
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
             $_SESSION['profile_pic'] = $row['profile_pic'] ?? 'profile-pic.jpg';
 
-           
             header("Location: dashboard.php");
             exit();
         } else {
@@ -51,17 +48,15 @@ if (isset($_POST['login'])) {
 </head>
 <body>
 
-
 <div class="center-page">
     <div class="aesthetic-container">
         <h2>AlumiNest ><</h2>
 
-       
-        <?php if ($error): ?>
-            <div class="error-box"><?= $error ?></div>
+     
+        <?php if ($error != ""): ?>
+            <div class="error-box"><?php echo $error; ?></div>
         <?php endif; ?>
 
-      
         <form method="POST">
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
