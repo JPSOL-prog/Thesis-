@@ -47,7 +47,7 @@ if (isset($_POST['login'])) {
 
 <div class="center-page">
     <div class="aesthetic-container">
-        <h2>AlumiNest >< Welcome ><</h2>
+        <h2>AlumiNest >< Welcome</h2>
 
      
         <?php if ($error): ?>
@@ -58,10 +58,10 @@ if (isset($_POST['login'])) {
         <form method="POST">
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
-            <button name="login">Login ></button>
+            <button name="login">Login</button>
         </form>
 
-        <p>Don't have an account? <a href="register.php">Create Account ></a></p>
+        <p>Don't have an account? <a href="register.php">Create Account</a></p>
     </div>
 </div>
 
